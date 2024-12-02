@@ -12,6 +12,8 @@ is processed and stored in an existing PostgreSQL database. Key features include
    in parking space availability.
 3. Storing the processed data in a PostgreSQL table named `parking_data`.
 
+Note: The stream is also written to the console to check easily the output.
+
 The PostgreSQL table should have the following schema:
 - `parking_id` (STRING): Unique identifier for the parking facility.
 - `nb_of_available_parking_spaces` (INT): Number of available parking spaces.

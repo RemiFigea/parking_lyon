@@ -26,7 +26,6 @@ __pycache__/
 parking_data/
 
 # Ignorer fichier de test et de données et clé de sécurité
-*.txt
 *.pkl
 *.csv
 *.pem
