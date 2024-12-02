@@ -1,0 +1,34 @@
+# Ignorer l'environnement virtuel
+.venv/
+venv/
+
+# Ignorer les fichiers de compilation Python
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorer les dossiers __pycache__ générés par Python
+__pycache__/
+**/__pycache__/
+
+# Ignorer les fichiers de log et de configuration temporaires
+*.log
+*.tmp
+*.swp
+
+# Ignorer les fichiers spécifiques à certains IDE/éditeurs
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Ignorer les dossiers de données
+parking_data/
+
+# Ignorer fichier de test et de données et clé de sécurité
+*.txt
+*.pkl
+*.csv
+*.pem
+*.mp4
+
