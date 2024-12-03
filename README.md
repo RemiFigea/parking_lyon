@@ -73,26 +73,35 @@ Follow the steps below to get the project up and running.
     - Modify the script update_db.py adapt the JBC_URL to the IP of your RDS instance (line 45).
         ```python 
         JBC_URL = "jdbc:postgresql://<RDS-endpoint>:5432/parking_lyon_db"
+
 2. **AWS EC2 instance**
 
     - Create an EC2 instance (e.g., Amazon Linux 2023: al2023-ami-2023.6.20241121.0-kernel-6.1-x86_64).
     - Adapt the security group to allow inbound SSH connections.
-    - Transfer the requirements.txt file to your EC2 instance (run this command from the directory parking_lyon on your console):
+    - Transfer files to your EC2 instance (run this command from the directory parking_lyon on your console):
         ```bash   
         scp -i /path/to/your/key.pem requirements.txt ec2-user@<instance-ip>:~/
+        scp -i /path/to/your/key.pem update_db.py ec2-user@<instance-ip>:~/
+        scp -i /path/to/your/key.pem ec2_instance_setup.sh ec2-user@<instance-ip>:~/
     - SSH into the EC2 instance:
         ```bash
         ssh -i /path/to/your/key.pem ec2-user@<instance-ip>
     - Setup the EC2 instance by running the setup script:
         ```bash
+        chmod +x ec2_instance_setup.sh
         ./ec2_instance_setup.sh
     Note: Modify the script to include the RDS password where necessary.
 
-3. **Configure the Security Group**
+3. **AWS IAM rôle** (Optional)
+    - Create an IAM role for EC2 with the AmazonSSMManagedInstanceCore and CloudWatchAgentServerPolicy policies.
+    - Attach the role to your EC2 instance via the EC2 console under Security > Modify IAM role.
+    - This role will allow your EC2 instance to use SSM for remote management and send logs to CloudWatch.
+
+4. **Configure the Security Group**
     - On your AWS RDS instance, modify the security group to allow inbound traffic on port **5432** (PostgreSQL) from the EC2 instance.
 
 
-4. **API Access**: The project fetches data from Lyon's public parking API. No authentication is required for this demo.
+5. **API Access**: The project fetches data from Lyon's public parking API. No authentication is required for this demo.
 
 ## Running the Stream
 

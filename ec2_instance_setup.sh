@@ -22,7 +22,7 @@ pip3 install .
 # scp -i /path/to/your/key.pem /path/to/requirements.txt ec2-user@<instance-ip>:/desired/path/
 
 # Installer les dépendances depuis le fichier requirements.txt
-pip3 install -r /path/to/requirements.txt --verbose
+pip3 install -r requirements.txt --verbose
 
 # Installer PostgreSQL
 sudo dnf update
@@ -37,7 +37,7 @@ mkdir -p ~/libs
 wget https://jdbc.postgresql.org/download/postgresql-42.7.4.jar -P ~/libs/
 
 # Enregistrer le mot de passe de connexion à PostgreSQL
-echo "export PGPASSWORD='your_password_here'" >> ~/.bashrc
+echo "export PGPASSWORD='your_password_here'" | tee -a ~/.bashrc > /dev/null
 source ~/.bashrc
 
 # Vérifier si PostgreSQL fonctionne

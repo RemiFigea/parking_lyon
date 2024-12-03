@@ -62,7 +62,7 @@ spark = SparkSession.builder \
     .appName("Parking Availability Streaming") \
     .config("spark.jars", JAR_FILES_PATH) \
     .getOrCreate()
-
+# spark.sparkContext.setLogLevel("INFO") # other option "DEBUG", "ERROR"
 # PostgreSQL connection properties
 postgres_properties = {
     "user": "postgres",  # PostgreSQL user
@@ -217,8 +217,9 @@ streaming_df = streaming_df.groupBy("parking_id") \
 query_postgresql = streaming_df.writeStream \
     .outputMode("append") \
     .foreachBatch(write_to_postgresql) \
-    .option("checkpointLocation", "/tmp/checkpoints/query_psql") \
     .start()
+    # .option("checkpointLocation", "/tmp/checkpoints/query_psql") \
+    # .start()
 
 # Wait for the termination of both streams
 query_postgresql.awaitTermination()
