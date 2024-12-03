@@ -1,27 +1,24 @@
 # parking Lyon
 
-Welcome to the Parking Lyon repository!
-This repository demonstrates a concrete use case of Apache Spark's streaming function, applyInPandasWithState.
-
-We simulate a real-time data stream by periodically querying a public API that provides real-time information about available parking spaces in Lyon's parking facilities. The data is processed using Apache Spark, and only changes in parking availability are written to a PostgreSQL database.
-
-This project highlights the use of Spark's applyInPandasWithState to manage stateful streaming computations efficiently.
+Welcome to the **Parking Lyon** repository! This project demonstrates a concrete use case of Apache Spark's streaming functionality, utilizing applyInPandasWithState to efficiently process real-time data streams. The solution is deployed on an **AWS EC2 instance** and sends processed data to a **PostgreSQL database** hosted on **AWS RDS**.
 
 ## Overview
 
+The project simulates a real-time data stream by periodically querying a public API that provides up-to-date information about available parking spaces across Lyon’s parking facilities. The collected data is processed using Apache Spark, which detects and stores only the changes in parking availability to a PostgreSQL database. This ensures minimal redundancy and optimizes storage.
+
 **What This Repository Does:**
 
-1. Simulates a Real-Time Data Stream:
+1. **Simulates a Real-Time Data Stream**:
 
     The script queries the Lyon parking API every minute to fetch the latest parking data in JSON format.
 
-2. Processes Data with Apache Spark:
+2. **Processes Data with Apache Spark**:
 
     Spark reads the data stream and applies applyInPandasWithState to process only rows representing changes (e.g., new availability counts of parking spaces).
 
-3. Stores Data in PostgreSQL:
+3. **Stores Data in PostgreSQL**:
 
-    Processed rows with changes are appended to a PostgreSQL database, ensuring the database remains up-to-date with minimal redundant data.
+    Only updated rows (those representing changes in parking availability) are written to the PostgreSQL database, ensuring the database is kept up-to-date with minimal redundancy.
 
 ## Repository Structure
 
@@ -30,48 +27,82 @@ The repository is structured as follows:
 /parking_lyon
     /libs
         - postgresql-42.7.4.jar
-    - update_db.py
+    - ec2_instance_setup.sh
     - README.md
+    - requirements.txt
+    - update_db.py
 ```
 
 - **`/libs`**: Contains external dependencies, such as the PostgreSQL driver.
 - **`postgresql-42.7.4.jar`**: PostgreSQL driver required to configure Spark for database connectivity.
-- **`update_db.py`**: Simulate the streaming, read it and write it to the PostgreSQL database with Spark
-- **`requirements.txt`**
+- **`ec2_instance_setup.sh`**: Script to install all necessary dependencies on the AWS EC2 instance.
 - **`README.md`**: This documentation file.
+- **`requirements.txt`**
+- **`update_db.py`**: Simulate the streaming, read it and write it to the PostgreSQL database with Spark
 
 ## Getting Started
 
-**Prerequisites:**
-
-- **PostgreSQL**:
-    - Ensure PostgreSQL is installed and properly configured.
-    - Set up a PostgreSQL instance with a table named parking_data. The table schema should be:
-        ```sql
-        CREATE TABLE parking_data (
-            parking_id VARCHAR,
-            nb_of_available_parking_spaces INT,
-            ferme BOOLEAN,
-            date TIMESTAMP
-        );
-
-- **Python Environment**: Install the required Python libraries. You can use the following command:
-    ```bash
-    pip install -r requirements.txt
-
-- **API Access**: The project fetches data from Lyon's public parking API. No authentication is required for this demo.
-
-**Running the Project:**
 - Clone the repository:
     ```bash
     git clone https://github.com/your_username/parking_lyon.git
     cd parking_lyon
 
-- Start the data stream:
-    ```bash
-    python update_db.py
-- Verify that data is being written to the PostgreSQL database. You can also check the console to see the output.
+**Prerequisites:**
 
+Follow the steps below to get the project up and running.
+
+1. **AWS RDS instance**
+
+    - Set up a PostgreSQL database on **AWS RDS** (could also be hosted on the EC2 instance if preferred).
+    - Configure the database password. You will need to specify this password in the ec2_instance_setup.sh script to allow Spark to connect to the database.
+    - Modify the security group of the RDS instance to allow inbound traffic from your local IP for verification purposes.
+    - From your console connect to the RDS instance.
+        ```bash
+        psql -h <RDS-endpoint> -U postgres -p 5432
+    - Create a database parking_lyon_db.
+        ```sql
+        CREATE DATABASE parking_lyon_db;
+
+    - Initialize an empty table parking_table as follow:
+        ```sql
+        CREATE TABLE parking_table (
+            nb_of_available_parking_spaces INT,
+            ferme BOOLEAN,
+            date TIMESTAMP
+        );
+    - Modify the script update_db.py adapt the JBC_URL to the IP of your RDS instance (line 45).
+        ```python 
+        JBC_URL = "jdbc:postgresql://<RDS-endpoint>:5432/parking_lyon_db"
+2. **AWS EC2 instance**
+
+    - Create an EC2 instance (e.g., Amazon Linux 2023: al2023-ami-2023.6.20241121.0-kernel-6.1-x86_64).
+    - Adapt the security group to allow inbound SSH connections.
+    - Transfer the requirements.txt file to your EC2 instance (run this command from the directory parking_lyon on your console):
+        ```bash   
+        scp -i /path/to/your/key.pem requirements.txt ec2-user@<instance-ip>:~/
+    - SSH into the EC2 instance:
+        ```bash
+        ssh -i /path/to/your/key.pem ec2-user@<instance-ip>
+    - Setup the EC2 instance by running the setup script:
+        ```bash
+        ./ec2_instance_setup.sh
+    Note: Modify the script to include the RDS password where necessary.
+
+3. **Configure the Security Group**
+    - On your AWS RDS instance, modify the security group to allow inbound traffic on port **5432** (PostgreSQL) from the EC2 instance.
+
+
+4. **API Access**: The project fetches data from Lyon's public parking API. No authentication is required for this demo.
+
+## Running the Stream
+
+Once everything is set up, you can run the stream:
+- Ensure you are connected to your EC2 instance.
+- Run the following command to start the script that will continuously fetch parking data and write it to PostgreSQL:
+    ```bash
+    pyhton3 update_db.py
+
+- To verify that the data is being written to the PostgreSQL database, connect to your RDS instance and query the parking_data table.
    
 ## Contributing
 

@@ -41,9 +41,21 @@ import time
 
 # API URL and PostgreSQL database configuration
 API_URL = "https://download.data.grandlyon.com/files/rdata/lpa_mobilite.donnees/parking_temps_reel.json"
-JAR_FILES_PATH = "/home/remifigea/code/parking_lyon/libs/postgresql-42.7.4.jar"
-JBC_URL = "jdbc:postgresql://localhost:5432/parking_data"
-OUTPUT_PATH = os.path.join(os.getcwd(), "parking_data")
+JAR_FILES_PATH = "./libs/postgresql-42.7.4.jar"
+JBC_URL = "jdbc:postgresql://15.188.96.121:5432/parking_lyon_db"
+OUTPUT_PATH = "./parking_data"
+CHECKPOINT_DIR = "/tmp/checkpoints/query_psql"
+
+PGPASSWORD = os.environ.get('PGPASSWORD')
+if not PGPASSWORD:
+    raise ValueError("PGPASSWORD environment variable not set. To set it, use the following command:\n"
+                      "export PGPASSWORD='your_password_here'")
+
+# Empty the checkpoints dir to avoid raising error in case of previous stopping of the script
+if os.path.exists(CHECKPOINT_DIR):
+    shutil.rmtree(CHECKPOINT_DIR)
+
+os.makedirs('./libs', exist_ok=True)
 
 # Spark session configuration
 spark = SparkSession.builder \
@@ -54,7 +66,7 @@ spark = SparkSession.builder \
 # PostgreSQL connection properties
 postgres_properties = {
     "user": "postgres",  # PostgreSQL user
-    "password": "mypassword",  # PostgreSQL password
+    "password": PGPASSWORD,  # PostgreSQL password
     "driver": "org.postgresql.Driver"
 }
 
@@ -80,7 +92,7 @@ def fetch_data_and_save(api_url, output_path):
             json_filepath = os.path.join(output_path, json_filename)
 
             response = requests.get(api_url)
-
+            print(f"Time: {timestamp} - status_code request of API: {response.status_code}.")
             if response.status_code == 200:
                 data = response.json()
                 # Save the JSON file
@@ -161,7 +173,9 @@ def write_to_postgresql(batch_df, epoch_id):
     - epoch_id: Batch ID.
     """
     try:
-        batch_df.write.jdbc(JBC_URL, "parking_data", mode="append", properties=postgres_properties)
+        print("Start writing in PostgreSQL database.")
+        batch_df.write.jdbc(JBC_URL, "parking_table", mode="append", properties=postgres_properties)
+        print("Data written in PostgreSQL database.")
     except Exception as e:
         print(f"Error inserting into PostgreSQL: {str(e)}")
 
@@ -194,10 +208,10 @@ streaming_df = streaming_df.groupBy("parking_id") \
     .drop("value_has_change")
 
 # Start the stream to output data to the console for visualization
-query_console = streaming_df.writeStream \
-    .outputMode("append") \
-    .format("console") \
-    .start()
+#query_console = streaming_df.writeStream \
+#    .outputMode("append") \
+#    .format("console") \
+#    .start()
 
 # Start the stream to write the results to PostgreSQL database
 query_postgresql = streaming_df.writeStream \
@@ -208,4 +222,4 @@ query_postgresql = streaming_df.writeStream \
 
 # Wait for the termination of both streams
 query_postgresql.awaitTermination()
-query_console.awaitTermination()
+#query_console.awaitTermination()
