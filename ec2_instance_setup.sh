@@ -16,11 +16,6 @@ tar -xzf pyspark-3.5.3.tar.gz
 cd pyspark-3.5.3
 pip3 install .
 
-# Instructions pour transférer le fichier requirements.txt depuis la console locale vers l'instance EC2
-# COMMANDE MANUELLE A LANCER DEPUIS CONSOLE POUR TRANSFÉRER LE FICHIER `requirements.txt`:
-# Exécutez la commande suivante sur votre machine locale pour transférer `requirements.txt` :
-# scp -i /path/to/your/key.pem /path/to/requirements.txt ec2-user@<instance-ip>:/desired/path/
-
 # Installer les dépendances depuis le fichier requirements.txt
 pip3 install -r requirements.txt --verbose
 

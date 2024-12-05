@@ -28,6 +28,7 @@ The repository is structured as follows:
     /libs
         - postgresql-42.7.4.jar
     - ec2_instance_setup.sh
+    - log4j.properties
     - README.md
     - requirements.txt
     - update_db.py
@@ -36,6 +37,7 @@ The repository is structured as follows:
 - **`/libs`**: Contains external dependencies, such as the PostgreSQL driver.
 - **`postgresql-42.7.4.jar`**: PostgreSQL driver required to configure Spark for database connectivity.
 - **`ec2_instance_setup.sh`**: Script to install all necessary dependencies on the AWS EC2 instance.
+- **`log4j.properties`**: Spark logs (and related libraries) configuration file.
 - **`README.md`**: This documentation file.
 - **`requirements.txt`**
 - **`update_db.py`**: Simulate the streaming, read it and write it to the PostgreSQL database with Spark
@@ -76,13 +78,14 @@ Follow the steps below to get the project up and running.
 
 2. **AWS EC2 instance**
 
-    - Create an EC2 instance (e.g., Amazon Linux 2023: al2023-ami-2023.6.20241121.0-kernel-6.1-x86_64).
+    - Create an EC2 instance using the Amazon Linux 2023 AMI (e.g., al2023-ami-2023.6.20241121.0-kernel-6.1-x86_64).
     - Adapt the security group to allow inbound SSH connections.
     - Transfer files to your EC2 instance (run this command from the directory parking_lyon on your console):
         ```bash   
         scp -i /path/to/your/key.pem requirements.txt ec2-user@<instance-ip>:~/
         scp -i /path/to/your/key.pem update_db.py ec2-user@<instance-ip>:~/
         scp -i /path/to/your/key.pem ec2_instance_setup.sh ec2-user@<instance-ip>:~/
+        scp -i /path/to/your/key.pem log4j.properties ec2-user@<instance-ip>:~/
     - SSH into the EC2 instance:
         ```bash
         ssh -i /path/to/your/key.pem ec2-user@<instance-ip>
@@ -109,7 +112,7 @@ Once everything is set up, you can run the stream:
 - Ensure you are connected to your EC2 instance.
 - Run the following command to start the script that will continuously fetch parking data and write it to PostgreSQL:
     ```bash
-    pyhton3 update_db.py
+    python3 update_db.py
 
 - To verify that the data is being written to the PostgreSQL database, connect to your RDS instance and query the parking_data table.
    

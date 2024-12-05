@@ -22,8 +22,9 @@ __pycache__/
 *.sublime-workspace
 *.sublime-project
 
-# Ignorer les dossiers de données
+# Ignorer les dossiers de données et logs
 parking_data/
+logs/
 
 # Ignorer fichier de test et de données et clé de sécurité
 *.pkl

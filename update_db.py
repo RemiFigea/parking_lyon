@@ -42,11 +42,11 @@ import time
 # API URL and PostgreSQL database configuration
 API_URL = "https://download.data.grandlyon.com/files/rdata/lpa_mobilite.donnees/parking_temps_reel.json"
 JAR_FILES_PATH = "./libs/postgresql-42.7.4.jar"
-JBC_URL = "jdbc:postgresql://15.188.96.121:5432/parking_lyon_db"
+JDBC_URL = "jdbc:postgresql://172.31.4.218:5432/parking_lyon_db"
 OUTPUT_PATH = "./parking_data"
 CHECKPOINT_DIR = "/tmp/checkpoints/query_psql"
-
 PGPASSWORD = os.environ.get('PGPASSWORD')
+
 if not PGPASSWORD:
     raise ValueError("PGPASSWORD environment variable not set. To set it, use the following command:\n"
                       "export PGPASSWORD='your_password_here'")
@@ -57,12 +57,28 @@ if os.path.exists(CHECKPOINT_DIR):
 
 os.makedirs('./libs', exist_ok=True)
 
+# Create a directory to store logs
+log_dir = "./logs"
+os.makedirs(log_dir, exist_ok=True)
+
+# Specify the path to logs (for Spark and it's related libraries) configuration file
+log4j_properties_path = "log4j.properties"
+print("path to log4j.properties found:", os.path.exists(log4j_properties_path))
+
 # Spark session configuration
 spark = SparkSession.builder \
     .appName("Parking Availability Streaming") \
     .config("spark.jars", JAR_FILES_PATH) \
+    .config("spark.driver.extraJavaOptions", f"-Dlog4j.configuration=file:{log4j_properties_path}") \
     .getOrCreate()
-# spark.sparkContext.setLogLevel("INFO") # other option "DEBUG", "ERROR"
+
+# Add thoses lines to sparksession to store eventlog performance of spark
+# .config("spark.eventLog.enabled", "true") \
+# .config("spark.eventLog.dir", log_dir) \
+
+# Set log level for logs to display in the console
+spark.sparkContext.setLogLevel("ERROR")
+
 # PostgreSQL connection properties
 postgres_properties = {
     "user": "postgres",  # PostgreSQL user
@@ -92,17 +108,23 @@ def fetch_data_and_save(api_url, output_path):
             json_filepath = os.path.join(output_path, json_filename)
 
             response = requests.get(api_url)
-            print(f"Time: {timestamp} - status_code request of API: {response.status_code}.")
+            localtime = time.localtime()
+            hour = f"{localtime.tm_hour}h:{localtime.tm_min}min:{localtime.tm_sec}s"
+            print(f"Time: {hour} - status_code request of API: {response.status_code}.")
             if response.status_code == 200:
+                print(f"Time: {hour} - Getting response.json ")
                 data = response.json()
+                print(f"Time: {hour} - response.json ok ")
                 # Save the JSON file
                 with open(json_filepath, "w") as f:
+                    print(f"Time: {hour} - json_filepath opened ")
                     json.dump(data, f)
+                    print(f"Time: {hour} - json_filepath written ")
             else:
                 print(f"HTTP Error: {response.status_code}")
         except Exception as e:
             print(f"Error fetching data: {str(e)}")
-        time.sleep(60)
+        time.sleep(120)
 
         # Remove the temporary JSON file after processing
         if os.path.exists(json_filepath):
@@ -174,7 +196,7 @@ def write_to_postgresql(batch_df, epoch_id):
     """
     try:
         print("Start writing in PostgreSQL database.")
-        batch_df.write.jdbc(JBC_URL, "parking_table", mode="append", properties=postgres_properties)
+        batch_df.write.jdbc(JDBC_URL, "parking_table", mode="append", properties=postgres_properties)
         print("Data written in PostgreSQL database.")
     except Exception as e:
         print(f"Error inserting into PostgreSQL: {str(e)}")
@@ -208,7 +230,7 @@ streaming_df = streaming_df.groupBy("parking_id") \
     .drop("value_has_change")
 
 # Start the stream to output data to the console for visualization
-#query_console = streaming_df.writeStream \
+# query_console = streaming_df.writeStream \
 #    .outputMode("append") \
 #    .format("console") \
 #    .start()
@@ -223,4 +245,4 @@ query_postgresql = streaming_df.writeStream \
 
 # Wait for the termination of both streams
 query_postgresql.awaitTermination()
-#query_console.awaitTermination()
+# query_console.awaitTermination()
